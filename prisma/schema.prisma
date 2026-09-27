@@ -1,0 +1,101 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// === MODUL 1: LAPORAN HARIAN ===
+model LaporanHarian {
+  id             String            @id @default(cuid())
+  tanggal        DateTime
+  jenisPekerjaan String
+  namaRuasJalan  String
+  staAwal        Float
+  staAkhir       Float
+  sisi           String   // Kiri / Kanan / Tengah
+  panjang        Float    // meter
+  lebar          Float    // meter
+  tebal          Float    // cm
+  keterangan     String?
+  foto           Foto[]
+  riwayatMaterial RiwayatMaterial[]
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+}
+
+model Foto {
+  id             String        @id @default(cuid())
+  laporanId      String
+  laporan        LaporanHarian @relation(fields: [laporanId], references: [id], onDelete: Cascade)
+  url            String
+  progres        Int           // 0, 50, 100
+  namaFile       String
+  ukuranAsli     Int
+  ukuranKompresi Int
+  createdAt      DateTime      @default(now())
+}
+
+// === MODUL 2: SURAT ===
+model Surat {
+  id         String   @id @default(cuid())
+  jenis       String   // MASUK / KELUAR
+  nomorSurat String
+  tanggal    DateTime
+  pengirim   String?  // untuk surat masuk
+  tujuan     String?  // untuk surat keluar
+  perihal    String
+  fileUrl    String?
+  namaFile   String?
+  keterangan String?
+  createdAt  DateTime @default(now())
+}
+
+// === MODUL 3: MATERIAL ===
+model Material {
+  id          String            @id @default(cuid())
+  nama        String
+  satuan      String   // m³, kg, ton, dll
+  stokSaatIni Float    @default(0)
+  createdAt   DateTime          @default(now())
+  riwayat     RiwayatMaterial[]
+}
+
+model RiwayatMaterial {
+  id         String          @id @default(cuid())
+  materialId String
+  material   Material        @relation(fields: [materialId], references: [id], onDelete: Cascade)
+  jenis      String   // MASUK / PAKAI
+  jumlah     Float
+  tanggal    DateTime
+  supplier   String?
+  laporanId  String?
+  laporan    LaporanHarian?  @relation(fields: [laporanId], references: [id])
+  keterangan String?
+  createdAt  DateTime        @default(now())
+}
+
+// === MODUL 4: ALAT ===
+model Alat {
+  id          String         @id @default(cuid())
+  nama        String
+  statusSaatIni String  @default("STANDBY") // PAKAI / RUSAK / STANDBY
+  createdAt   DateTime       @default(now())
+  riwayat     RiwayatAlat[]
+}
+
+model RiwayatAlat {
+  id                 String   @id @default(cuid())
+  alatId             String
+  alat               Alat     @relation(fields: [alatId], references: [id], onDelete: Cascade)
+  tanggal            DateTime
+  jamMulai           String?  // "07:00"
+  jamSelesai         String?  // "15:00"
+  totalJam           Float?
+  operator           String?
+  status             String   // PAKAI / RUSAK / STANDBY
+  keteranganKerusakan String?
+  createdAt          DateTime @default(now())
+}
